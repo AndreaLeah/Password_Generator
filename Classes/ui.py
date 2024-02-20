@@ -1,5 +1,6 @@
+from functools import partial
 from tkinter import *
-from tkinter import messagebox
+from tkinter import messagebox, _setit
 from Classes.generate_password import *
 import pyperclip
 from os.path import exists
@@ -22,7 +23,7 @@ class UserInterface:
         # Window Instance of Tk
         self.window = Tk()
         self.window.title("Password Generator")
-        self.window.config(padx=50, pady=50, bg="white")
+        self.window.config(padx=200, pady=50, bg="white")
         self.window.eval('tk::PlaceWindow . center')
 
         # Website Label
@@ -85,10 +86,8 @@ class UserInterface:
             self.email_list_data = [*set(df.email.tolist())]
 
             self.showing_item = StringVar()
-            self.dropdown_list = self.email_list_data
-
-            self.email_dropdown_box = OptionMenu(self.window, self.showing_item, *self.dropdown_list,
-                                                 command=self.update_email_input_box_after_dropdown_click)
+            self.email_dropdown_box = OptionMenu(self.window, self.showing_item, *(self.email_list_data),
+                                                 command=lambda _: self.update_email_input_box_after_dropdown_click(self.showing_item.get()))
             self.email_dropdown_box.config(width=34, bg="white")
             self.email_dropdown_box.grid(column=1, row=4, columnspan=3)
             self.email_input.insert(0, self.email_list_data[0])
@@ -103,13 +102,15 @@ class UserInterface:
                 csvwriter = csv.writer(csvfile)
                 # writing the fields
                 csvwriter.writerow(headers)
+            # Read csv file
+            df = pd.read_csv(EMAIL_LIST_FILE)
+            # Iterate through email column in csv file & add each item in column to list, removing any duplicates
+            self.email_list_data = [' ']
             self.showing_item = StringVar()
-            self.dropdown_list = [" "]
-
-            self.email_dropdown_box = OptionMenu(self.window, self.showing_item, *self.dropdown_list,
-                                                 command=self.update_email_input_box_after_dropdown_click)
+            self.email_dropdown_box = OptionMenu(self.window, self.showing_item, *(self.email_list_data),
+                                                 command=lambda _: self.update_email_input_box_after_dropdown_click(self.showing_item.get()))
             self.email_dropdown_box.config(width=25, bg="white")
-            self.email_dropdown_box.grid(column=1, row=3, columnspan=2)
+            self.email_dropdown_box.grid(column=1, row=4, columnspan=3)
 
         self.window.mainloop()
 
@@ -162,19 +163,11 @@ class UserInterface:
                 df = pd.read_csv(EMAIL_LIST_FILE)
                 # Iterate through email column in csv file & add each item in column to list, removing any duplicates
                 self.email_list_data = [*set(df.email.tolist())]
+                print(f"This is the self.email_list_data: {self.email_list_data}")
 
-                # Set email dropdown to email input
-                self.showing_item.set(email_un_name)
-                menu = self.email_dropdown_box['menu']
-                menu.delete(0, "end")
-                for string in self.email_list_data:
-                    menu.add_command(label=string,
-                                     command=lambda value=string: self.om_variable.set(value))
-
-                # # Auto-populate & Insert email address list, index, 0 at character 0
-                # # self.email_input.insert(0, self.email_list_data[0])
-                # # self.clicked.set(self.email_list_data[0])
+                # Set email input text & update email dropdown list with newly added value
                 self.clicked.set(email_un_name)
+                self.showing_item.set(email_un_name)
 
                 # Delete website input text
                 self.website_input.delete(0, END)
